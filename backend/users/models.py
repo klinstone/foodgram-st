@@ -2,7 +2,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
-from django.conf import settings # Импортируем настройки
+from django.conf import settings  # Импортируем настройки
 
 
 # Валидатор для поля username
@@ -46,16 +46,16 @@ class User(AbstractUser):
     )
     avatar = models.ImageField(
         'Аватар',
-        upload_to='users/avatars/', # Директория внутри MEDIA_ROOT
-        blank=True, # Аватар не обязателен
-        null=True, # Разрешаем Null в базе данных
+        upload_to='users/avatars/',  # Директория внутри MEDIA_ROOT
+        blank=True,  # Аватар не обязателен
+        null=True,  # Разрешаем Null в базе данных
         help_text='Загрузите ваш аватар'
     )
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ['username'] # Сортировка по умолчанию
+        ordering = ['username']  # Сортировка по умолчанию
 
     def __str__(self):
         return self.username
@@ -66,13 +66,13 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='follower', # Пользователь, который подписывается
+        related_name='follower',  # Пользователь, который подписывается
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='following', # Автор, на которого подписываются
+        related_name='following',  # Автор, на которого подписываются
         verbose_name='Автор'
     )
     created = models.DateTimeField(

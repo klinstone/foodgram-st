@@ -1,19 +1,20 @@
 # backend/recipes/models.py
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator # Добавляем валидаторы
+# Добавляем валидаторы
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
     name = models.CharField(
         'Название ингредиента',
-        max_length=128, # Из спецификации
+        max_length=128,  # Из спецификации
         help_text='Введите название ингредиента'
     )
     measurement_unit = models.CharField(
         'Единица измерения',
-        max_length=64, # Из спецификации
+        max_length=64,  # Из спецификации
         help_text='Введите единицу измерения'
     )
 
@@ -43,7 +44,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         'Название рецепта',
-        max_length=256, # Из спецификации
+        max_length=256,  # Из спецификации
         help_text='Введите название рецепта'
     )
     image = models.ImageField(
@@ -78,13 +79,13 @@ class Recipe(models.Model):
     pub_date = models.DateTimeField(
         'Дата публикации',
         auto_now_add=True,
-        db_index=True # Индекс для быстрой сортировки по дате
+        db_index=True  # Индекс для быстрой сортировки по дате
     )
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ['-pub_date'] # Сортировка от новых к старым по умолчанию
+        ordering = ['-pub_date']  # Сортировка от новых к старым по умолчанию
 
     def __str__(self):
         return f'{self.name} (автор: {self.author.username})'
@@ -95,13 +96,13 @@ class IngredientInRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredients', # Обратная связь от Recipe
+        related_name='recipe_ingredients',  # Обратная связь от Recipe
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.CASCADE, # При удалении ингредиента удаляем связь
-        related_name='recipe_ingredients', # Обратная связь от Ingredient
+        on_delete=models.CASCADE,  # При удалении ингредиента удаляем связь
+        related_name='recipe_ingredients',  # Обратная связь от Ingredient
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
@@ -143,7 +144,7 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorited_by', # Кто добавил в избранное
+        related_name='favorited_by',  # Кто добавил в избранное
         verbose_name='Избранный рецепт'
     )
     added_date = models.DateTimeField(
@@ -177,7 +178,7 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='in_shopping_cart_of', # Чей список покупок
+        related_name='in_shopping_cart_of',  # Чей список покупок
         verbose_name='Рецепт в списке покупок'
     )
     added_date = models.DateTimeField(

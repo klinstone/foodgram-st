@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-m^zynjv%d4xaih9v4^bs9hoggqn+!d=5hb4*2uw9+oj^)18=w="
+SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 
 # Application definition
@@ -80,9 +85,13 @@ WSGI_APPLICATION = "foodgram.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -144,7 +153,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 6, # Значение по умолчанию, как на главной
+    'PAGE_SIZE': 6,  # Значение по умолчанию, как на главной
     'PAGINATION_PARAM': 'page',  # Имя параметра для номера страницы
     'PAGE_SIZE_QUERY_PARAM': 'limit',  # Имя параметра для лимита на странице
 }
@@ -162,12 +171,16 @@ DJOSER = {
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
     'USERNAME_CHANGED_EMAIL_CONFIRMATION': False,
     'SERIALIZERS': {
-        'user_create': 'api.serializers.CustomUserCreateSerializer',  # Наш сериализатор создания
-        'user': 'api.serializers.CustomUserSerializer',  # Наш сериализатор для чтения /users/me/
-        'current_user': 'api.serializers.CustomUserSerializer',  # Наш сериализатор для чтения /users/
+        # Наш сериализатор создания
+        'user_create': 'api.serializers.CustomUserCreateSerializer',
+        # Наш сериализатор для чтения /users/me/
+        'user': 'api.serializers.CustomUserSerializer',
+        # Наш сериализатор для чтения /users/
+        'current_user': 'api.serializers.CustomUserSerializer',
         # 'user_delete': 'djoser.serializers.UserDeleteSerializer', # стандартный
     },
     'PERMISSIONS': {
-        'user_list': ['rest_framework.permissions.AllowAny'],  # Разрешаем просмотр списка пользователей всем
+        # Разрешаем просмотр списка пользователей всем
+        'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }

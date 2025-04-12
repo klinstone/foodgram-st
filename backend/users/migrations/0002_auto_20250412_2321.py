@@ -17,20 +17,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='avatar',
-            field=models.ImageField(blank=True, help_text='Загрузите ваш аватар', null=True, upload_to='users/avatars/', verbose_name='Аватар'),
+            field=models.ImageField(blank=True, help_text='Загрузите ваш аватар',
+                                    null=True, upload_to='users/avatars/', verbose_name='Аватар'),
         ),
         migrations.AlterField(
             model_name='user',
             name='username',
-            field=models.CharField(error_messages={'unique': 'Пользователь с таким юзернеймом уже существует.'}, help_text='Укажите ваш юзернейм (никнейм). Допустимые символы: буквы, цифры и @/./+/-/_', max_length=150, unique=True, validators=[django.core.validators.RegexValidator(message='Имя пользователя содержит недопустимые символы.', regex='^[\\w.@+-]+$')], verbose_name='Уникальный юзернейм'),
+            field=models.CharField(error_messages={'unique': 'Пользователь с таким юзернеймом уже существует.'}, help_text='Укажите ваш юзернейм (никнейм). Допустимые символы: буквы, цифры и @/./+/-/_',
+                                   max_length=150, unique=True, validators=[django.core.validators.RegexValidator(message='Имя пользователя содержит недопустимые символы.', regex='^[\\w.@+-]+$')], verbose_name='Уникальный юзернейм'),
         ),
         migrations.CreateModel(
             name='Subscription',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Дата подписки')),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='following', to=settings.AUTH_USER_MODEL, verbose_name='Автор')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='follower', to=settings.AUTH_USER_MODEL, verbose_name='Подписчик')),
+                ('id', models.BigAutoField(auto_created=True,
+                 primary_key=True, serialize=False, verbose_name='ID')),
+                ('created', models.DateTimeField(
+                    auto_now_add=True, verbose_name='Дата подписки')),
+                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='following', to=settings.AUTH_USER_MODEL, verbose_name='Автор')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                 related_name='follower', to=settings.AUTH_USER_MODEL, verbose_name='Подписчик')),
             ],
             options={
                 'verbose_name': 'Подписка',
@@ -40,10 +46,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='subscription',
-            constraint=models.UniqueConstraint(fields=('user', 'author'), name='unique_user_author_subscription'),
+            constraint=models.UniqueConstraint(
+                fields=('user', 'author'), name='unique_user_author_subscription'),
         ),
         migrations.AddConstraint(
             model_name='subscription',
-            constraint=models.CheckConstraint(check=models.Q(('user', django.db.models.expressions.F('author')), _negated=True), name='prevent_self_subscription'),
+            constraint=models.CheckConstraint(check=models.Q(('user', django.db.models.expressions.F(
+                'author')), _negated=True), name='prevent_self_subscription'),
         ),
     ]

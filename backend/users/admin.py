@@ -1,11 +1,14 @@
 # backend/users/admin.py
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin # Импортируем базовый UserAdmin
+# Импортируем базовый UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Subscription
 
 from django.contrib.auth.models import Group
 
 # Переопределяем стандартный UserAdmin
+
+
 class UserAdmin(BaseUserAdmin):
     """Кастомизация административной панели для модели User."""
     list_display = (
@@ -28,7 +31,8 @@ class UserAdmin(BaseUserAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     """Административная панель для модели Subscription."""
     list_display = ('id', 'user', 'author', 'created')
-    search_fields = ('user__username', 'author__username', 'user__email', 'author__email')
+    search_fields = ('user__username', 'author__username',
+                     'user__email', 'author__email')
     list_filter = ('created',)
     empty_value_display = '-пусто-'
 

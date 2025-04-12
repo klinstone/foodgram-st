@@ -1,12 +1,14 @@
 # backend/recipes/management/commands/load_ingredients.py
 import json
-import os # Для работы с путями к файлам
+import os  # Для работы с путями к файлам
 from django.core.management.base import BaseCommand
-from django.conf import settings # Для доступа к BASE_DIR
+from django.conf import settings  # Для доступа к BASE_DIR
 from recipes.models import Ingredient
 
 # Нам нужен файл в foodgram-st/data/ingredients.json
-DATA_FILE_PATH = os.path.join(settings.BASE_DIR.parent, 'data', 'ingredients.json')
+DATA_FILE_PATH = os.path.join(
+    settings.BASE_DIR.parent, 'data', 'ingredients.json')
+
 
 class Command(BaseCommand):
     help = f'Loads ingredients from {DATA_FILE_PATH}'
