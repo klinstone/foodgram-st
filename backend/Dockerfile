@@ -27,14 +27,21 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файл зависимостей
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 # Устанавливаем зависимости Python
 # Используем --no-cache-dir для уменьшения размера образа
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем весь код проекта в рабочую директорию
-COPY . .
+#COPY . .
+#COPY ../data/ /app/data/
+
+# Копируем весь код бэкенда (путь от корня контекста)
+COPY backend/ /app/
+
+# Копируем папку с данными (путь от корня контекста)
+COPY data/ /app/data/
 
 # Открываем порт, на котором будет работать Gunicorn
 EXPOSE 8000

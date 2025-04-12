@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.response import Response
 from djoser.views import UserViewSet as DjoserUserViewSet # Импортируем базовый вьюсет Djoser
+from .serializers import CustomUserSerializer, SetAvatarSerializer
 
 # Наши модели
 from recipes.models import (
@@ -112,6 +113,42 @@ class CustomUserViewSet(DjoserUserViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         # На случай если добавят другие методы
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(
+        detail=False,
+        methods=['put', 'delete'],
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
+        serializer_class=SetAvatarSerializer
+    )
+    def avatar(self, request):
+        user = request.user
+
+        if request.method == 'PUT':
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            avatar_file = serializer.validated_data.get('avatar')
+
+            if user.avatar:
+                user.avatar.delete(save=False)
+
+            user.avatar = avatar_file
+            user.save(update_fields=['avatar'])
+
+            user_serializer = CustomUserSerializer(user, context={'request': request})
+            return Response(user_serializer.data, status=status.HTTP_200_OK)
+
+        elif request.method == 'DELETE':
+            if not user.avatar:
+                return Response(
+                    {'errors': 'У пользователя нет аватара для удаления.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user.avatar.delete(save=True)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 

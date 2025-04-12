@@ -6,8 +6,7 @@ from django.conf import settings  # Для доступа к BASE_DIR
 from recipes.models import Ingredient
 
 # Нам нужен файл в foodgram-st/data/ingredients.json
-DATA_FILE_PATH = os.path.join(
-    settings.BASE_DIR.parent, 'data', 'ingredients.json')
+DATA_FILE_PATH = os.path.join(settings.BASE_DIR, 'data', 'ingredients.json')
 
 
 class Command(BaseCommand):

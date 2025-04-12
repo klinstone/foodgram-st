@@ -284,3 +284,8 @@ class SubscriptionSerializer(CustomUserSerializer):
         serializer = RecipeMinifiedSerializer(
             recipes, many=True, read_only=True)
         return serializer.data
+
+class SetAvatarSerializer(serializers.Serializer):
+    """Сериализатор для загрузки аватара (принимает base64)."""
+    # Используем наше кастомное поле для base64
+    avatar = Base64ImageField(required=True)
