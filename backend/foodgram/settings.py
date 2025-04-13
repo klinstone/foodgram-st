@@ -41,12 +41,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Сторонние приложения
     'rest_framework',
-    'rest_framework.authtoken',  # Для токен-аутентификации DRF
+    'rest_framework.authtoken',
     'djoser',
     'django_filters',
-    'users.apps.UsersConfig',  # Используем полные пути для ясности
+    'users.apps.UsersConfig',
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig',
 ]
@@ -144,21 +143,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        # По умолчанию разрешаем только чтение для всех,
-        # или полную аутентификацию для авторизованных
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # Используем аутентификацию по токену
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 6,  # Значение по умолчанию, как на главной
-    'PAGINATION_PARAM': 'page',  # Имя параметра для номера страницы
-    'PAGE_SIZE_QUERY_PARAM': 'limit',  # Имя параметра для лимита на странице
+    'PAGE_SIZE': 6,
+    'PAGINATION_PARAM': 'page',
+    'PAGE_SIZE_QUERY_PARAM': 'limit',
 }
 
-# Настройки Djoser
 DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
@@ -171,16 +166,12 @@ DJOSER = {
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
     'USERNAME_CHANGED_EMAIL_CONFIRMATION': False,
     'SERIALIZERS': {
-        # Наш сериализатор создания
         'user_create': 'api.serializers.CustomUserCreateSerializer',
-        # Наш сериализатор для чтения /users/me/
         'user': 'api.serializers.CustomUserSerializer',
-        # Наш сериализатор для чтения /users/
         'current_user': 'api.serializers.CustomUserSerializer',
-        # 'user_delete': 'djoser.serializers.UserDeleteSerializer', # стандартный
+        # 'user_delete': 'djoser.serializers.UserDeleteSerializer',
     },
     'PERMISSIONS': {
-        # Разрешаем просмотр списка пользователей всем
         'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }

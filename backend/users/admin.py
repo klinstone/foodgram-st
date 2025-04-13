@@ -1,12 +1,7 @@
-# backend/users/admin.py
 from django.contrib import admin
-# Импортируем базовый UserAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Subscription
-
 from django.contrib.auth.models import Group
-
-# Переопределяем стандартный UserAdmin
 
 
 class UserAdmin(BaseUserAdmin):
@@ -37,7 +32,6 @@ class SubscriptionAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-# Регистрируем нашу кастомную модель User с кастомным UserAdmin
 admin.site.register(User, UserAdmin)
 
 

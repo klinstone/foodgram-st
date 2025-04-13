@@ -1,63 +1,51 @@
-# backend/api/views.py
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse # Для скачивания файла
-from django.db.models import Sum # Для агрегации ингредиентов
+from django.http import HttpResponse
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, filters as drf_filters
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import (
+    IsAuthenticated, AllowAny
+)
 from rest_framework.response import Response
-from djoser.views import UserViewSet as DjoserUserViewSet # Импортируем базовый вьюсет Djoser
-from .serializers import CustomUserSerializer, SetAvatarSerializer
+from djoser.views import UserViewSet as DjoserUserViewSet
 
-# Наши модели
+from .serializers import CustomUserSerializer, SetAvatarSerializer
 from recipes.models import (
     Ingredient, Recipe, IngredientInRecipe, Favorite, ShoppingCart
 )
 from users.models import User, Subscription
-
-# Наши сериализаторы, фильтры и пермишены
 from .serializers import (
     IngredientSerializer, RecipeReadSerializer, RecipeCreateUpdateSerializer,
-    CustomUserSerializer, SubscriptionSerializer, RecipeMinifiedSerializer
+    SubscriptionSerializer, RecipeMinifiedSerializer
 )
 from .filters import IngredientFilter, RecipeFilter
-from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly
+from .permissions import IsOwnerOrReadOnly
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet для просмотра ингредиентов.
-    Доступен всем пользователям. Реализован поиск по имени.
-    """
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,) # Разрешаем доступ всем
+    permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
-    pagination_class = None # Отключаем пагинацию для ингредиентов
+    pagination_class = None
 
 
 class CustomUserViewSet(DjoserUserViewSet):
-    """
-    ViewSet для работы с Пользователями (расширяет Djoser).
-    Включает подписки.
-    """
-    # queryset уже определен в DjoserUserViewSet (User.objects.all())
-    # serializer_class будет определен Djoser в зависимости от action
-    # permission_classes тоже управляются Djoser (или можно переопределить)
-    # pagination_class использует настройки из settings.REST_FRAMEWORK
+
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     @action(
-        detail=False, # Не для конкретного пользователя, а для /users/subscriptions/
+        detail=False,
         methods=['get'],
-        permission_classes=[IsAuthenticated] # Только для авторизованных
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
-        """Возвращает пользователей, на которых подписан текущий пользователь."""
-        # Получаем авторов, на которых подписан текущий user
         authors = User.objects.filter(following__user=request.user)
-        # Пагинируем результат
         page = self.paginate_queryset(authors)
         serializer = SubscriptionSerializer(
             page, many=True, context={'request': request}
@@ -65,14 +53,13 @@ class CustomUserViewSet(DjoserUserViewSet):
         return self.get_paginated_response(serializer.data)
 
     @action(
-        detail=True, # Для конкретного пользователя /users/{id}/subscribe/
+        detail=True,
         methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated] # Только для авторизованных
+        permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id=None):
-        """Подписывает/отписывает текущего пользователя на/от пользователя с id."""
-        if not id: # Доп. проверка, хотя URL должен содержать id
-             return Response(
+        if not id:
+            return Response(
                 {'detail': 'ID пользователя не указан.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -108,11 +95,11 @@ class CustomUserViewSet(DjoserUserViewSet):
                     {'errors': 'Вы не были подписаны на этого пользователя.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            subscription = get_object_or_404(Subscription, user=user, author=author)
+            subscription = get_object_or_404(
+                Subscription, user=user, author=author)
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # На случай если добавят другие методы
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(
@@ -136,7 +123,8 @@ class CustomUserViewSet(DjoserUserViewSet):
             user.avatar = avatar_file
             user.save(update_fields=['avatar'])
 
-            user_serializer = CustomUserSerializer(user, context={'request': request})
+            user_serializer = CustomUserSerializer(
+                user, context={'request': request})
             return Response(user_serializer.data, status=status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
@@ -153,34 +141,27 @@ class CustomUserViewSet(DjoserUserViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для работы с Рецептами.
-    Поддерживает CRUD, фильтрацию, избранное, список покупок, скачивание.
-    """
     queryset = Recipe.objects.all()
-    # Права доступа: Чтение для всех, остальное - для владельца или админа/ридонли
     permission_classes = [IsOwnerOrReadOnly]
-    filter_backends = (DjangoFilterBackend, drf_filters.OrderingFilter) # Добавляем сортировку
+    filter_backends = (DjangoFilterBackend, drf_filters.OrderingFilter)
     filterset_class = RecipeFilter
-    ordering_fields = ['name', 'pub_date', 'cooking_time'] # Поля для сортировки
-    ordering = ['-pub_date'] # Сортировка по умолчанию
+    ordering_fields = ['name', 'pub_date', 'cooking_time']
+    ordering = ['-pub_date']
 
     def get_serializer_class(self):
-        """Выбирает сериализатор в зависимости от действия."""
         if self.action in ('list', 'retrieve'):
             return RecipeReadSerializer
-        # Для create, update, partial_update используем один сериализатор
         return RecipeCreateUpdateSerializer
 
     def perform_create(self, serializer):
-        """При создании рецепта автором назначается текущий пользователь."""
         serializer.save(author=self.request.user)
 
-    def _manage_user_recipe_relation(self, request, pk, related_model, error_msg_exists, error_msg_not_exists):
-        """Общий метод для добавления/удаления рецепта в избранное/корзину."""
+    def _manage_user_recipe_relation(self, request, pk, related_model,
+                                     error_msg_exists, error_msg_not_exists):
         user = request.user
         recipe = get_object_or_404(Recipe, pk=pk)
-        relation_exists = related_model.objects.filter(user=user, recipe=recipe).exists()
+        relation_exists = related_model.objects.filter(
+            user=user, recipe=recipe).exists()
 
         if request.method == 'POST':
             if relation_exists:
@@ -198,20 +179,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {'errors': error_msg_not_exists},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            relation = get_object_or_404(related_model, user=user, recipe=recipe)
+            relation = get_object_or_404(
+                related_model, user=user, recipe=recipe)
             relation.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
     @action(
         detail=True,
         methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated] # Только авторизованные
+        permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        """Добавляет/удаляет рецепт из избранного."""
         return self._manage_user_recipe_relation(
             request, pk, Favorite,
             'Рецепт уже в избранном.',
@@ -221,10 +201,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated] # Только авторизованные
+        permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        """Добавляет/удаляет рецепт из списка покупок."""
         return self._manage_user_recipe_relation(
             request, pk, ShoppingCart,
             'Рецепт уже в списке покупок.',
@@ -232,33 +211,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        detail=False, # Не для конкретного рецепта
+        detail=False,
         methods=['get'],
-        permission_classes=[IsAuthenticated] # Только авторизованные
+        permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        """Формирует и отдает файл со списком покупок."""
         user = request.user
-        # Получаем ID рецептов в корзине пользователя
-        recipe_ids = ShoppingCart.objects.filter(user=user).values_list('recipe__id', flat=True)
+        recipe_ids = ShoppingCart.objects.filter(
+            user=user).values_list('recipe__id', flat=True)
 
         if not recipe_ids:
             return Response(
-                 {'errors': 'Список покупок пуст.'},
-                 status=status.HTTP_400_BAD_REQUEST
+                {'errors': 'Список покупок пуст.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Получаем все ингредиенты из этих рецептов, агрегируем количество
         ingredients = IngredientInRecipe.objects.filter(
             recipe__id__in=recipe_ids
         ).values(
-            'ingredient__name', # Группируем по имени
-            'ingredient__measurement_unit' # и единице измерения
+            'ingredient__name',
+            'ingredient__measurement_unit'
         ).annotate(
-            total_amount=Sum('amount') # Суммируем количество
-        ).order_by('ingredient__name') # Сортируем по имени
+            total_amount=Sum('amount')
+        ).order_by('ingredient__name')
 
-        # Формируем текстовое содержимое файла
         shopping_list_content = "Список покупок для Foodgram:\n\n"
         for item in ingredients:
             name = item['ingredient__name']
@@ -266,19 +242,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             amount = item['total_amount']
             shopping_list_content += f"- {name} ({unit}) — {amount}\n"
 
-        # Создаем HTTP ответ с файлом
-        response = HttpResponse(shopping_list_content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+        response = HttpResponse(shopping_list_content,
+                                content_type='text/plain')
+        response['Content-Disposition'] = \
+            'attachment; filename="shopping_list.txt"'
         return response
-
-    # Эндпоинт get-link не реализован, т.к. спецификация неясна
-    # по механизму генерации короткой ссылки.
-    # Можно просто вернуть полный URL рецепта, если потребуется.
-    # @action(detail=True, methods=['get'], permission_classes=[AllowAny])
-    # def get_link(self, request, pk=None):
-    #     recipe = self.get_object()
-    #     # Здесь можно реализовать логику генерации короткой ссылки
-    #     # Пока просто вернем абсолютный URL до API эндпоинта рецепта
-    #     link = request.build_absolute_uri(recipe.get_absolute_url()) # если есть метод get_absolute_url
-    #     # или просто link = request.build_absolute_uri()
-    #     return Response({'short-link': link}, status=status.HTTP_200_OK)

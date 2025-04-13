@@ -1,11 +1,8 @@
-# backend/users/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
-from django.conf import settings  # Импортируем настройки
+from django.conf import settings
 
-
-# Валидатор для поля username
 username_validator = RegexValidator(
     regex=r'^[\w.@+-]+$',
     message='Имя пользователя содержит недопустимые символы.',
@@ -28,7 +25,10 @@ class User(AbstractUser):
         'Уникальный юзернейм',
         max_length=150,
         unique=True,
-        help_text='Укажите ваш юзернейм (никнейм). Допустимые символы: буквы, цифры и @/./+/-/_',
+        help_text=(
+            'Укажите ваш юзернейм (никнейм). Допустимые символы: '
+            'буквы, цифры и @/./+/-/_'
+        ),
         validators=[username_validator],
         error_messages={
             'unique': "Пользователь с таким юзернеймом уже существует.",
@@ -46,16 +46,16 @@ class User(AbstractUser):
     )
     avatar = models.ImageField(
         'Аватар',
-        upload_to='users/avatars/',  # Директория внутри MEDIA_ROOT
-        blank=True,  # Аватар не обязателен
-        null=True,  # Разрешаем Null в базе данных
+        upload_to='users/avatars/',
+        blank=True,
+        null=True,
         help_text='Загрузите ваш аватар'
     )
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ['username']  # Сортировка по умолчанию
+        ordering = ['username']
 
     def __str__(self):
         return self.username
@@ -66,13 +66,13 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='follower',  # Пользователь, который подписывается
+        related_name='follower',
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='following',  # Автор, на которого подписываются
+        related_name='following',
         verbose_name='Автор'
     )
     created = models.DateTimeField(

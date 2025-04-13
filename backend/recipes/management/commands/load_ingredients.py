@@ -1,18 +1,18 @@
-# backend/recipes/management/commands/load_ingredients.py
 import json
-import os  # Для работы с путями к файлам
+import os
 from django.core.management.base import BaseCommand
-from django.conf import settings  # Для доступа к BASE_DIR
+from django.conf import settings
 from recipes.models import Ingredient
 
-# Нам нужен файл в foodgram-st/data/ingredients.json
 DATA_FILE_PATH = os.path.join(settings.BASE_DIR, 'data', 'ingredients.json')
 
 
 class Command(BaseCommand):
+    """Команда для загрузки ингредиентов из JSON файла."""
     help = f'Loads ingredients from {DATA_FILE_PATH}'
 
     def handle(self, *args, **options):
+        """Обрабатывает загрузку ингредиентов."""
         if not Ingredient.objects.exists():
             self.stdout.write(self.style.WARNING(
                 'База ингредиентов пуста. Загружаем данные...'
@@ -37,11 +37,10 @@ class Command(BaseCommand):
                             f'Пропущен ингредиент с неполными данными: {item}'
                         ))
 
-                # Используем bulk_create для эффективной вставки
                 Ingredient.objects.bulk_create(ingredients_to_create)
 
                 self.stdout.write(self.style.SUCCESS(
-                    f'Успешно загружено {len(ingredients_to_create)} ингредиентов.'
+                    f'Успешно. Ингредиентов: {len(ingredients_to_create)}.'
                 ))
 
             except FileNotFoundError:
