@@ -3,21 +3,31 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
-from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart)
-from rest_framework import filters as drf_filters
-from rest_framework import status, viewsets
+from rest_framework import filters as drf_filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+)
 from users.models import Subscription, User
 
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
-from .serializers import (CustomUserSerializer, IngredientSerializer,
-                          RecipeCreateUpdateSerializer,
-                          RecipeMinifiedSerializer, RecipeReadSerializer,
-                          SetAvatarSerializer, SubscriptionSerializer)
+from .serializers import (
+    CustomUserSerializer,
+    IngredientSerializer,
+    RecipeCreateUpdateSerializer,
+    RecipeMinifiedSerializer,
+    RecipeReadSerializer,
+    SetAvatarSerializer,
+    SubscriptionSerializer,
+)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
