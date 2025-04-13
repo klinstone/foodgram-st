@@ -11,6 +11,7 @@ djangorestframework_simplejwt==5.5.0
 djoser==2.3.1
 gunicorn==23.0.0
 idna==3.10
+isort==6.0.1
 oauthlib==3.2.2
 packaging==24.2
 pillow==11.2.1

@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Subscription
 from django.contrib.auth.models import Group
+
+from .models import Subscription, User
 
 
 class UserAdmin(BaseUserAdmin):
