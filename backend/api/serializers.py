@@ -2,11 +2,14 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.db import transaction
-from djoser.serializers import \
+
+from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer
+)
 from djoser.serializers import UserSerializer as DjoserUserSerializer
-from recipes.models import Ingredient, IngredientInRecipe, Recipe
 from rest_framework import serializers
+
+from recipes.models import Ingredient, IngredientInRecipe, Recipe
 from users.models import Subscription, User
 
 
