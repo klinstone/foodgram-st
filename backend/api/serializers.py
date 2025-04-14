@@ -6,7 +6,7 @@ from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer,
     UserSerializer as DjoserUserSerializer,
 )
-from rest_framework import serializers
+from rest_framework import serializers, status
 
 from recipes.models import Ingredient, IngredientInRecipe, Recipe
 from users.models import Subscription, User
@@ -124,6 +124,9 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             'image', 'name', 'text', 'cooking_time', 'author'
         )
         read_only_fields = ('id', 'author')
+        extra_kwargs = {
+            'ingredients': {'required': True, 'allow_empty': False},
+        }
 
     def validate_ingredients(self, value):
         if not value:
@@ -150,20 +153,39 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         validated_data['author'] = self.context.get('request').user
+        image = validated_data.pop('image', None)
 
         recipe = Recipe.objects.create(**validated_data)
+        if image:
+            recipe.image = image
+            recipe.save(update_fields=['image'])
         self._create_ingredients(recipe, ingredients_data)
 
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
+
+        if 'ingredients' not in self.initial_data:
+            raise serializers.ValidationError({
+                'ingredients':
+                    ['Поле ingredients обязательно при обновлении.']
+            }, code=status.HTTP_400_BAD_REQUEST)
         ingredients_data = validated_data.pop('ingredients', None)
+        image = validated_data.pop('image', None)
+        instance = super().update(instance, validated_data)
+
+        if image:
+            instance.image = image
+
         if ingredients_data is not None:
             instance.ingredients.clear()
             self._create_ingredients(instance, ingredients_data)
+            instance.save()
+        elif image:
+            instance.save(update_fields=['image'])
 
-        return super().update(instance, validated_data)
+        return instance
 
     def to_representation(self, instance):
         return RecipeReadSerializer(
@@ -212,3 +234,7 @@ class SubscriptionSerializer(CustomUserSerializer):
 
 class SetAvatarSerializer(serializers.Serializer):
     avatar = Base64ImageField(required=True)
+
+
+class SetAvatarResponseSerializer(serializers.Serializer):
+    avatar = serializers.ImageField(read_only=True)

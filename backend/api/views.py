@@ -1,10 +1,12 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import filters as drf_filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -20,11 +22,11 @@ from users.models import Subscription, User
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
-    CustomUserSerializer,
     IngredientSerializer,
     RecipeCreateUpdateSerializer,
     RecipeMinifiedSerializer,
     RecipeReadSerializer,
+    SetAvatarResponseSerializer,
     SetAvatarSerializer,
     SubscriptionSerializer,
 )
@@ -39,7 +41,12 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size_query_param = 'limit'
+
+
 class CustomUserViewSet(DjoserUserViewSet):
+    pagination_class = CustomPageNumberPagination
 
     def get_permissions(self):
         if self.action == 'retrieve':
@@ -130,9 +137,10 @@ class CustomUserViewSet(DjoserUserViewSet):
             user.avatar = avatar_file
             user.save(update_fields=['avatar'])
 
-            user_serializer = CustomUserSerializer(
+            response_serializer = SetAvatarResponseSerializer(
                 user, context={'request': request})
-            return Response(user_serializer.data, status=status.HTTP_200_OK)
+            return Response(response_serializer.data,
+                            status=status.HTTP_200_OK)
 
         elif request.method == 'DELETE':
             if not user.avatar:
@@ -154,6 +162,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
     ordering_fields = ['name', 'pub_date', 'cooking_time']
     ordering = ['-pub_date']
+    pagination_class = CustomPageNumberPagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -254,3 +263,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = \
             'attachment; filename="shopping_list.txt"'
         return response
+
+    @action(
+        detail=True,
+        methods=['get'],
+        permission_classes=[AllowAny],
+        url_path='get-link'
+    )
+    def short_link(self, request, pk=None):
+        recipe = self.get_object()
+        try:
+            recipe_url = request.build_absolute_uri(
+                reverse('recipes-detail', kwargs={'pk': recipe.pk})
+            )
+            generated_short_link = recipe_url
+        except Exception:
+            return Response(
+                {"detail": "Не удалось сгенерировать ссылку."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        response_data = {
+            "short-link": generated_short_link
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
